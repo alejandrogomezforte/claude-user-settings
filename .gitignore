@@ -1,0 +1,35 @@
+# Credentials / secrets
+.credentials.json
+mcp-needs-auth-cache.json
+
+# Conversation history (large, ephemeral)
+history.jsonl
+
+# Caches
+cache/
+paste-cache/
+stats-cache.json
+statsig/
+
+# Session & runtime state
+sessions/
+debug/
+telemetry/
+ide/
+shell-snapshots/
+plugins/
+
+# Internal edit tracking (UUID dirs, very large)
+file-history/
+
+# Temp data
+backups/
+downloads/
+
+# Per-project data (lives with each project, not here)
+projects/
+
+# Conversation-scoped ephemeral data
+plans/
+tasks/
+todos/
