@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Delivery: merge branch, generate PR document, create GitHub PR, update plan status. Usage: /wrap-up MLID-XXXX"
+description: "Delivery: merge branch, generate PR document, update plan status. Usage: /wrap-up MLID-XXXX"
 user_invocable: true
 arguments:
   - name: task_id
@@ -10,7 +10,7 @@ arguments:
 
 # /wrap-up $ARGUMENTS
 
-You are running the **delivery phase**. Merge the branch, generate the PR, and update tracking documents.
+You are running the **delivery phase**. Merge the branch, generate the PR document, and update tracking documents. **You do NOT create GitHub PRs** — the user handles PR creation manually.
 
 ## Step 1 — Gather context
 
@@ -39,7 +39,7 @@ git push origin --delete feature/$ARGUMENTS-short-description
 Then check the epic plan-progress file:
 - Update the sub-task row: set Status to `Done`, Merged to Epic to `Yes`
 - **If more sub-tasks remain in this deliverable** → STOP here. Tell the user the sub-task is merged and what's next.
-- **If the deliverable group is complete** → continue to Step 3 (PR from epic → develop)
+- **If the deliverable group is complete** → continue to Step 3
 
 ## Step 3 — Generate PR document
 
@@ -89,46 +89,35 @@ Detailed breakdown of each change area. Include:
 - [$ARGUMENTS](https://localinfusion.atlassian.net/browse/$ARGUMENTS)
 ```
 
-## Step 4 — Create the GitHub PR
-
-Determine the PR base and head:
-
-| Task type | Base | Head |
-|-----------|------|------|
-| Standalone | `develop` | `feature/$ARGUMENTS-short-description` |
-| Epic deliverable | `develop` | `epic/MLID-XXXX-epic-name` |
-
-Before creating the PR:
-```bash
-# Rebase on base branch
-git checkout <base-branch>
-git pull origin <base-branch>
-git checkout <head-branch>
-git rebase <base-branch>
-git push origin <head-branch> --force-with-lease
-```
-
-Read the PR document from `docs/agomez/PR/$ARGUMENTS.md` and use its content for the PR body.
-
-Create the PR:
-```bash
-gh pr create --base <base-branch> --head <head-branch> \
-  --title "[title from PR doc]" \
-  --body "$(cat docs/agomez/PR/$ARGUMENTS.md)"
-```
-
-**Ask the user for confirmation before creating the PR.**
-
-## Step 5 — Update plan status
+## Step 4 — Update plan status
 
 - Update the plan file: set Status to `Done`
 - If epic sub-task: update the plan-progress tracking table
 
+## Step 5 — Present next steps to the user
+
+Tell the user what manual steps remain for PR creation. Include the exact commands tailored to their task type:
+
+### For standalone tasks:
+```
+Next steps (manual):
+1. Push the branch:  git push origin -u <branch-name>
+2. Create the PR:    gh pr create --base develop --head <branch-name> --title "<title>" --body-file docs/agomez/PR/$ARGUMENTS.md
+```
+
+### For epic sub-tasks (deliverable complete):
+```
+Next steps (manual):
+1. Rebase on develop: git rebase develop && git push origin <epic-branch> --force-with-lease
+2. Create the PR:     gh pr create --base develop --head <epic-branch> --title "<title>" --body-file docs/agomez/PR/$ARGUMENTS.md
+```
+
 ## Important Rules
 
-- **Ask before creating the PR** — show the PR title and summary, get confirmation
-- **Don't transition Jira tickets** — only update Jira when the user explicitly asks
-- **PR body from the document** — use the generated PR doc, don't improvise
-- **Epic sub-tasks**: if the deliverable isn't complete, STOP after the merge — don't create a PR
+- **Git commands are OK** — merges, rebases, pushes are allowed (user will approve via permission prompt)
+- **NEVER create GitHub PRs** — no `gh pr create` or any `gh` commands. The user handles PR creation manually.
+- **NEVER transition Jira tickets** — only update Jira when the user explicitly asks
+- **PR body from the document** — use the generated PR doc content
+- **Epic sub-tasks**: if the deliverable isn't complete, STOP after the merge — don't generate a PR doc
 - **Commit format**: `[$ARGUMENTS] - type(scope): description` — no Co-Authored-By
 - **Always rebase before PR** — ensure clean history against the base branch

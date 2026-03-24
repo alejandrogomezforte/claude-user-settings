@@ -33,3 +33,6 @@ projects/
 plans/
 tasks/
 todos/
+
+# Image cache
+image-cache

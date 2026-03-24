@@ -44,7 +44,7 @@ If the branch already exists (resuming work), just check it out.
 
 ## Step 3 — Execute TDD cycles
 
-Follow the implementation steps from the plan, applying the red-green-refactor cycle for each step:
+Follow the implementation steps from the plan. For each step:
 
 ### RED — Write a failing test first
 - Create or modify the test file
@@ -52,25 +52,14 @@ Follow the implementation steps from the plan, applying the red-green-refactor c
 - Run the test to confirm it fails: `cd apps/web && npx jest --testPathPattern="<test-file>" --no-coverage`
 - The test must fail for the **right reason** (missing implementation, not syntax errors)
 
-### GREEN — Write minimal code to pass
-- Implement only what's needed to make the test pass
-- Don't add extra features or optimizations yet
+### GREEN — Write the full implementation and pass the test
+- Write the complete, clean implementation for the current step (no stubs or throwaway code)
+- Clean up naming, structure, and duplication as you go
 - Run the test to confirm it passes
-
-### REFACTOR — Clean up while tests stay green
-- Improve naming, structure, and readability
-- Remove duplication
-- Run tests after each change to ensure they still pass
-
-### Commit after each cycle
-```bash
-git add <specific-files>
-git commit -m "[$ARGUMENTS] - type(scope): description"
-```
 
 ## Step 4 — Repeat for each implementation step
 
-Work through the plan's implementation steps sequentially. Each step should result in at least one commit.
+Work through the plan's implementation steps sequentially.
 
 ## Step 5 — Signal completion
 
@@ -83,9 +72,8 @@ When all implementation steps are done:
 
 - **Follow the plan** — don't deviate from the approved implementation steps without discussing with the user
 - **TDD is mandatory** — never write implementation code before its test
-- **Commit frequently** — one commit per TDD cycle minimum
+- **Never commit** — do NOT commit. The user will commit manually when ready
 - **No `any` types** — use proper TypeScript types
 - **No `console.log`** — use `logger` from `@/utils/logger`
 - **Named exports only** — no default exports (except Next.js pages/layouts)
-- **Don't auto-commit** — only commit when a TDD cycle is complete, never batch all changes into one commit
-- **Commit format**: `[$ARGUMENTS] - type(scope): description` — no Co-Authored-By
+- **Commit format** (when user asks): `[$ARGUMENTS] - type(scope): description` — no Co-Authored-By
