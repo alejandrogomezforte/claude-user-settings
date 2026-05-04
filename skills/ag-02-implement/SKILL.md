@@ -1,10 +1,10 @@
 ---
 name: implement
-description: "Implement a planned Jira task using TDD. Reads the approved plan, creates the branch, and executes red-green-refactor cycles. Usage: /implement MLID-XXXX"
+description: "Implement a planned Jira task using TDD. Reads the approved plan, creates the branch, and executes red-green-refactor cycles. Usage: /implement MLID-XXXX  OR  /implement docs/agomez/plans/MLID-XXXX-short-description.md"
 user_invocable: true
 arguments:
-  - name: task_id
-    description: "Jira task ID (e.g., MLID-1868)"
+  - name: task_ref
+    description: "Jira task ID (e.g., MLID-1868) OR a plan file path (e.g., docs/agomez/plans/MLID-1868-foo.md)"
     required: true
 ---
 
@@ -12,15 +12,23 @@ arguments:
 
 You are starting the **implementation phase** of the software workflow. The plan has been approved — now execute it using strict TDD.
 
-## Step 1 — Locate and read the plan
+## Step 1 — Resolve `$ARGUMENTS` to a task ID and plan file
 
-Find the plan file for `$ARGUMENTS` in `docs/agomez/plans/`:
+`$ARGUMENTS` may be either a Jira task ID or a path to a plan file. Normalize before doing anything else and produce two values: `<task_id>` and `<plan_file>`.
 
-- Search for `docs/agomez/plans/$ARGUMENTS*.md`
-- If it's an epic sub-task, also read the epic plan-progress file for overall context
-- If no plan file is found, **STOP** and tell the user to run `/plan $ARGUMENTS` first
+**If `$ARGUMENTS` contains `/` or ends with `.md`** — treat it as a plan file path:
+- `<plan_file>` = `$ARGUMENTS` (verify the file exists; if not, **STOP** and report the bad path)
+- `<task_id>` = the first `MLID-\d+` token found in the filename (e.g., `docs/agomez/plans/MLID-1868-foo.md` → `MLID-1868`). If no Jira ID is found in the filename, **STOP** and ask the user for the task ID explicitly.
 
-Read the plan file completely. This is your implementation roadmap.
+**Otherwise** — treat `$ARGUMENTS` as a Jira task ID:
+- `<task_id>` = `$ARGUMENTS`
+- `<plan_file>` = the result of globbing `docs/agomez/plans/<task_id>*.md`. If zero matches, **STOP** and tell the user to run `/plan-task <task_id>` first. If multiple matches, **STOP** and ask the user to pass the explicit plan file path.
+
+For the rest of this skill, use `<task_id>` wherever a Jira ID is needed (branch names, commit messages, the `/verify` handoff). Use `<plan_file>` to read the plan.
+
+If the plan is for an epic sub-task, also read the epic plan-progress file for overall context.
+
+Read `<plan_file>` completely. This is your implementation roadmap.
 
 ## Step 2 — Create the feature branch
 
@@ -30,14 +38,14 @@ Check the current git branch. If not already on the correct feature branch:
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b feature/$ARGUMENTS-short-description
+git checkout -b feature/<task_id>-short-description
 ```
 
 **Epic sub-task** (base branch is the epic branch — read from plan file):
 ```bash
 git checkout epic/MLID-XXXX-epic-name
 git pull origin epic/MLID-XXXX-epic-name
-git checkout -b feature/$ARGUMENTS-short-description
+git checkout -b feature/<task_id>-short-description
 ```
 
 If the branch already exists (resuming work), just check it out.
@@ -66,7 +74,7 @@ Work through the plan's implementation steps sequentially.
 When all implementation steps are done:
 
 1. Run the full test suite for affected files
-2. Tell the user: "Implementation complete. You can now test the UI manually. When ready, run `/verify $ARGUMENTS` to check quality gates."
+2. Tell the user: "Implementation complete. You can now test the UI manually. When ready, run `/verify <task_id>` to check quality gates."
 
 ## Important Rules
 
@@ -76,4 +84,4 @@ When all implementation steps are done:
 - **No `any` types** — use proper TypeScript types
 - **No `console.log`** — use `logger` from `@/utils/logger`
 - **Named exports only** — no default exports (except Next.js pages/layouts)
-- **Commit format** (when user asks): `[$ARGUMENTS] - type(scope): description` — no Co-Authored-By
+- **Commit format** (when user asks): `[<task_id>] - type(scope): description` — no Co-Authored-By

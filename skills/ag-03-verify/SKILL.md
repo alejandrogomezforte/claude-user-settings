@@ -1,10 +1,10 @@
 ---
 name: verify
-description: "Quality gate: run tests, type-check, format, lint, and coverage on changed files only. Reports pass/fail checklist. Usage: /verify MLID-XXXX"
+description: "Quality gate: run tests, type-check, format, lint, and coverage on changed files only. Reports pass/fail checklist. Usage: /verify MLID-XXXX  OR  /verify docs/agomez/plans/MLID-XXXX-short-description.md"
 user_invocable: true
 arguments:
-  - name: task_id
-    description: "Jira task ID (e.g., MLID-1868)"
+  - name: task_ref
+    description: "Jira task ID (e.g., MLID-1868) OR a plan file path (e.g., docs/agomez/plans/MLID-1868-foo.md)"
     required: true
 ---
 
@@ -12,9 +12,19 @@ arguments:
 
 You are running the **quality gate** before wrap-up. Check everything, report results, and fix issues.
 
-## Step 1 — Identify scope
+## Step 1 — Resolve `$ARGUMENTS` and identify scope
 
-Find the plan file for `$ARGUMENTS` in `docs/agomez/plans/` to determine the base branch.
+`$ARGUMENTS` may be either a Jira task ID or a path to a plan file. Normalize first and produce two values: `<task_id>` and `<plan_file>`.
+
+**If `$ARGUMENTS` contains `/` or ends with `.md`** — treat it as a plan file path:
+- `<plan_file>` = `$ARGUMENTS` (verify the file exists; if not, **STOP** and report the bad path)
+- `<task_id>` = the first `MLID-\d+` token found in the filename. If none, **STOP** and ask for the task ID explicitly.
+
+**Otherwise** — treat `$ARGUMENTS` as a Jira task ID:
+- `<task_id>` = `$ARGUMENTS`
+- `<plan_file>` = the result of globbing `docs/agomez/plans/<task_id>*.md`. If zero matches, **STOP** and tell the user to run `/plan-task <task_id>` first. If multiple matches, **STOP** and ask the user to pass the explicit plan file path.
+
+Use `<task_id>` for commit messages and the report header. Use `<plan_file>` to determine the base branch.
 
 Determine changed files:
 ```bash
@@ -23,7 +33,7 @@ git diff --name-only <base-branch>...HEAD
 
 Where `<base-branch>` is:
 - `develop` for standalone tasks
-- `epic/MLID-XXXX-*` for epic sub-tasks (read from plan file)
+- `epic/MLID-XXXX-*` for epic sub-tasks (read from `<plan_file>`)
 
 Store the list of changed files — all subsequent checks target **only these files**.
 
@@ -85,7 +95,7 @@ Check that line coverage is ≥ 80%.
 Present a checklist:
 
 ```
-## Quality Gate — $ARGUMENTS
+## Quality Gate — <task_id>
 
 - [x] Tests: all passing (N tests)
 - [x] Types: no errors
@@ -105,7 +115,7 @@ If any checks failed:
 
 1. Fix the issues (formatting, lint, type errors)
 2. Re-run the failing checks to confirm they pass
-3. Commit the fixes: `[$ARGUMENTS] - chore(quality): fix lint/format/type issues`
+3. Commit the fixes: `[<task_id>] - chore(quality): fix lint/format/type issues`
 4. Update the checklist to show all passing
 
 ## Important Rules
